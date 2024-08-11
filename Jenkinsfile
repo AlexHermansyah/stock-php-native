@@ -1,6 +1,5 @@
 pipeline {
     agent any
-
     environment {
         NETLIFY_SITE_ID = '4cc8e3f6-6dc6-4eb8-b483-e6d1252210a0'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token-php')
@@ -70,7 +69,7 @@ pipeline {
 
                     steps {
                         sh '''
-                            npx playwright test  --reporter=html
+                            npx playwright test 
                         '''
                     }
 
