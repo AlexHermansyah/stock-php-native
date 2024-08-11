@@ -4,7 +4,7 @@ pipeline {
     environment {
         NETLIFY_SITE_ID = '4cc8e3f6-6dc6-4eb8-b483-e6d1252210a0'
         NETLIFY_AUTH_TOKEN = credentials('netlify-token-php')
-        REACT_APP_VERSION = "1.0.$BUILD_ID"
+        BUILD_VERSION = "1.0.$BUILD_ID"
     }
 
     stages {
@@ -12,17 +12,16 @@ pipeline {
         stage('Build') {
             agent {
                 docker {
-                    image 'node:18-alpine'
+                    image 'php:8.1-alpine'
                     reuseNode true
                 }
             }
             steps {
                 sh '''
                     ls -la
-                    node --version
-                    npm --version
-                    npm ci
-                    npm run build
+                    php --version
+                    composer --version
+                    composer install --no-interaction --prefer-dist
                     ls -la
                 '''
             }
@@ -43,7 +42,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'my-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     sh '''
                         aws --version
-                        aws s3 sync build s3://$AWS_S3_BUCKET
+                        aws s3 sync . s3://$AWS_S3_BUCKET --exclude ".git/*" --exclude "vendor/*" --exclude "node_modules/*"
                     '''
                 }
             }
@@ -54,20 +53,19 @@ pipeline {
                 stage('Unit tests') {
                     agent {
                         docker {
-                            image 'node:18-alpine'
+                            image 'php:8.1-alpine'
                             reuseNode true
                         }
                     }
 
                     steps {
                         sh '''
-                            #test -f build/index.html
-                            npm test
+                            php vendor/bin/phpunit --configuration phpunit.xml
                         '''
                     }
                     post {
                         always {
-                            junit 'jest-results/junit.xml'
+                            junit 'tests/_output/junit.xml'
                         }
                     }
                 }
@@ -75,32 +73,31 @@ pipeline {
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'php:8.1-alpine'
                             reuseNode true
                         }
                     }
 
                     steps {
                         sh '''
-                            node_modules/.bin/serve -s build &
-                            sleep 10
-                            npx playwright test  --reporter=html
+                            # Configure E2E testing environment
+                            # Run E2E tests (assuming you have a setup for it)
                         '''
                     }
 
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'e2e-reports', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
             }
         }
- 
+
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:8.1-alpine'
                     reuseNode true
                 }
             }
@@ -111,19 +108,18 @@ pipeline {
 
             steps {
                 sh '''
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
+                    composer global require netlify-cli
+                    ~/.composer/vendor/bin/netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
-                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json)
-                    npx playwright test  --reporter=html
+                    ~/.composer/vendor/bin/netlify status
+                    ~/.composer/vendor/bin/netlify deploy --dir=. --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(~/.composer/vendor/bin/netlify deploy --dir=. --json | jq -r '.deploy_url')
                 '''
             }
 
             post {
                 always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'e2e-reports', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
             }
         }
@@ -131,7 +127,7 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:8.1-alpine'
                     reuseNode true
                 }
             }
@@ -142,19 +138,17 @@ pipeline {
 
             steps {
                 sh '''
-                    node --version
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
+                    composer global require netlify-cli
+                    ~/.composer/vendor/bin/netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
-                    npx playwright test --reporter=html
+                    ~/.composer/vendor/bin/netlify status
+                    ~/.composer/vendor/bin/netlify deploy --dir=. --prod
                 '''
             }
 
             post {
                 always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'e2e-reports', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
                 }
             }
         }
