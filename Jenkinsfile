@@ -72,6 +72,14 @@ pipeline {
             environment {
                 CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
             }
+
+            steps {
+                sh '''
+                    netlify deploy --dir=build --php > deploy-output.php
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.php)
+                '''
+            }
+
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
@@ -90,6 +98,14 @@ pipeline {
             environment {
                 CI_ENVIRONMENT_URL = 'https://chipper-marigold-9d956f.netlify.app'
             }
+
+            steps {
+                sh '''
+                    netlify status
+                    netlify deploy --dir=build --prod
+                '''
+            }
+
             post {
                 always {
                     publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
