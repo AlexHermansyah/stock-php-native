@@ -19,7 +19,6 @@ pipeline {
             steps {
                 sh '''
                     ls -la
-                    node --version
                     npm --version
                     npm ci
                     ls -la
@@ -64,11 +63,6 @@ pipeline {
                             npm test
                         '''
                     }
-                    post {
-                        always {
-                            junit 'jest-results/junit.xml'
-                        }
-                    }
                 }
 
                 stage('E2E') {
@@ -110,12 +104,12 @@ pipeline {
 
             steps {
                 sh '''
-                    npm install netlify-cli node-jq
+                    npm install netlify-cli 
                     netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     netlify status
-                    netlify deploy --dir=build --json > deploy-output.json
-                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.json)
+                    netlify deploy --dir=build --php > deploy-output.php
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.php)
                     npx playwright test  --reporter=html
                 '''
             }
@@ -141,7 +135,6 @@ pipeline {
 
             steps {
                 sh '''
-                    node --version
                     npm install netlify-cli
                     netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
