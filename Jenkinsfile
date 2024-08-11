@@ -62,7 +62,7 @@ pipeline {
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'php:8.1-cli'
                             reuseNode true
                         }
                     }
@@ -85,7 +85,7 @@ pipeline {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:8.1-cli'
                     reuseNode true
                 }
             }
@@ -115,7 +115,7 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:8.1-cli'
                     reuseNode true
                 }
             }
