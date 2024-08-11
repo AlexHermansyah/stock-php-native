@@ -66,13 +66,6 @@ pipeline {
                             reuseNode true
                         }
                     }
-
-                    steps {
-                        sh '''
-                            npx playwright test 
-                        '''
-                    }
-
                     post {
                         always {
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
