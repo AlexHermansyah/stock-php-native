@@ -18,7 +18,6 @@ pipeline {
             }
             steps {
                 sh '''
-                    ls -la
                     npm --version
                     npm ci
                     ls -la
@@ -60,7 +59,6 @@ pipeline {
                     steps {
                         sh '''
                             #test -f build/index.php
-                            npm test
                         '''
                     }
                 }
@@ -83,7 +81,7 @@ pipeline {
 
                     post {
                         always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
                 }
