@@ -75,7 +75,6 @@ pipeline {
 
             steps {
                 sh '''
-                    netlify --version
                     netlify status
                     netlify deploy --dir=build --php > deploy-output.php
                     CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.php)
@@ -103,7 +102,6 @@ pipeline {
 
             steps {
                 sh '''
-                    netlify --version
                     netlify status
                     netlify deploy --dir=build --prod
                 '''
