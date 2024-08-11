@@ -4,6 +4,12 @@ pipeline {
     stages {
 
         stage('Build') {
+            agent {
+                docker {
+                    image 'php:8.1-cli'
+                    reuseNode true
+                }
+            }
             steps {
                 sh '''
                     ls -la
@@ -14,6 +20,12 @@ pipeline {
         }
 
         stage('Tests') {
+            agent {
+                docker {
+                    image 'php:8.1-cli'
+                    reuseNode true
+                }
+            }
             parallel {
                 stage('Syntax Check') {
                     steps {
