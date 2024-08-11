@@ -18,8 +18,6 @@ pipeline {
             }
             steps {
                 sh '''
-                    npm --version
-                    npm ci
                     ls -la
                 '''
             }
@@ -102,7 +100,7 @@ pipeline {
 
             steps {
                 sh '''
-                    npm install netlify-cli 
+                    install netlify-cli 
                     netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
                     netlify status
