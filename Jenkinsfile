@@ -58,20 +58,6 @@ pipeline {
                         '''
                     }
                 }
-
-                stage('E2E') {
-                    agent {
-                        docker {
-                            image 'php:8.1-cli'
-                            reuseNode true
-                        }
-                    }
-                    post {
-                        always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
-                        }
-                    }
-                }
             }
         }
  
