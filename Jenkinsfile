@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        NETLIFY_SITE_ID = '4cc8e3f6-6dc6-4eb8-b483-e6d1252210a0'
+        NETLIFY_AUTH_TOKEN = credentials('netlify-token-php')
+        REACT_APP_VERSION = "1.0.$BUILD_ID"
+    }
+
     stages {
 
         stage('Build') {
@@ -13,28 +19,11 @@ pipeline {
             steps {
                 sh '''
                     ls -la
-                    php --version
-                    # Tidak ada build steps karena ini adalah proyek PHP native sederhana
+                    node --version
+                    npm --version
+                    npm ci
+                    ls -la
                 '''
-            }
-        }
-
-        stage('Tests') {
-            agent {
-                docker {
-                    image 'php:8.1-cli'
-                    reuseNode true
-                }
-            }
-            parallel {
-                stage('Syntax Check') {
-                    steps {
-                        sh '''
-                            # Mengecek semua file PHP untuk memastikan tidak ada syntax error
-                            find . -name "*.php" -exec php -l {} \\;
-                        '''
-                    }
-                }
             }
         }
 
@@ -53,18 +42,119 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'my-aws', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     sh '''
                         aws --version
-                        aws s3 sync . s3://$AWS_S3_BUCKET --exclude ".git/*" --exclude "*.sql"
+                        aws s3 sync build s3://$AWS_S3_BUCKET
                     '''
                 }
             }
         }
 
-        stage('Deploy') {
+        stage('Tests') {
+            parallel {
+                stage('Unit tests') {
+                    agent {
+                        docker {
+                            image 'php:8.1-cli'
+                            reuseNode true
+                        }
+                    }
+
+                    steps {
+                        sh '''
+                            #test -f build/index.html
+                            npm test
+                        '''
+                    }
+                    post {
+                        always {
+                            junit 'jest-results/junit.xml'
+                        }
+                    }
+                }
+
+                stage('E2E') {
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            reuseNode true
+                        }
+                    }
+
+                    steps {
+                        sh '''
+                            serve -s build &
+                            sleep 10
+                            npx playwright test  --reporter=html
+                        '''
+                    }
+
+                    post {
+                        always {
+                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
+                        }
+                    }
+                }
+            }
+        }
+ 
+        stage('Deploy staging') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
+            }
+
             steps {
                 sh '''
-                    echo "Deploying application"
-                    # Langkah-langkah untuk deploy aplikasi PHP native dapat ditambahkan di sini
+                    npm install netlify-cli node-jq
+                    netlify --version
+                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
+                    netlify status
+                    netlify deploy --dir=build --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test  --reporter=html
                 '''
+            }
+
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            }
+        }
+
+        stage('Deploy prod') {
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
+
+            environment {
+                CI_ENVIRONMENT_URL = 'https://chipper-marigold-9d956f.netlify.app'
+            }
+
+            steps {
+                sh '''
+                    node --version
+                    npm install netlify-cli
+                    netlify --version
+                    echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
+                    netlify status
+                    netlify deploy --dir=build --prod
+                    npx playwright test --reporter=html
+                '''
+            }
+
+            post {
+                always {
+                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
+                }
             }
         }
     }
