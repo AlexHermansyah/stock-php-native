@@ -97,7 +97,7 @@ pipeline {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'php:8.1-alpine'
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
             }
@@ -127,7 +127,7 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'php:8.1-alpine'
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
             }
