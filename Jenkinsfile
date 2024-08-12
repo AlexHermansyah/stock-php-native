@@ -60,14 +60,8 @@ pipeline {
                 }
             }
         }
-        stages {
-        stage('Setup Node.js') {
-            steps {
-                sh 'apt-get update && apt-get install -y nodejs npm'
-                sh 'npm install -g netlify-cli'
-            }
-        }
-        }
+
+ 
         stage('Deploy') {
             agent {
                 docker {
@@ -77,10 +71,7 @@ pipeline {
             }    
             steps {
                 sh '''
-                    install netlify-cli 
-                    netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    netlify status
                     netlify deploy --dir=build --prod
                 '''
             }
