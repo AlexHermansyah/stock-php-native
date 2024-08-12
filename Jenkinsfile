@@ -54,7 +54,7 @@ pipeline {
 
                     steps {
                         sh '''
-                            #test -f build/index.php
+                            #test -f build/index.html
                         '''
                     }
                 }
