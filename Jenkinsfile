@@ -8,21 +8,37 @@ pipeline {
     }
 
     stages {
-
-        stage('Build') {
-            agent {
-                docker {
-                    image 'php:latest'
-                    reuseNode true
-                }
-            }
-            steps {
-                sh '''
-                    # Periksa apakah file build/index.html ada
-                    ls -la
-                '''
-            }
+stage('Build') {
+    agent {
+        docker {
+            image 'php:latest'
+            reuseNode true
         }
+    }
+    steps {
+        sh '''
+            # Contoh build
+            mkdir -p build
+            # Tambahkan perintah build yang sesuai
+            echo "File index.html" > build/index.html
+        '''
+    }
+}
+
+        // stage('Build') {
+        //     agent {
+        //         docker {
+        //             image 'php:latest'
+        //             reuseNode true
+        //         }
+        //     }
+        //     steps {
+        //         sh '''
+        //             # Periksa apakah file build/index.html ada
+        //             ls -la
+        //         '''
+        //     }
+        // }
 stage('AWS') {
     agent {
         docker {
