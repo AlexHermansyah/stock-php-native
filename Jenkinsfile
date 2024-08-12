@@ -60,8 +60,14 @@ pipeline {
                 }
             }
         }
-
- 
+        stages {
+        stage('Setup Node.js') {
+            steps {
+                sh 'apt-get update && apt-get install -y nodejs npm'
+                sh 'npm install -g netlify-cli'
+            }
+        }
+        }
         stage('Deploy') {
             agent {
                 docker {
