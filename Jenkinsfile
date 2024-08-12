@@ -48,7 +48,7 @@ stage('AWS') {
         }
     }
     environment {
-        AWS_S3_BUCKET = 'learn-jenkins-202408112001'
+        AWS_S3_BUCKET = 'php-bucket-202408112001'
     }
     steps {
         withCredentials([usernamePassword(credentialsId: 'my-aws-php', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
