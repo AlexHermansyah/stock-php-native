@@ -60,57 +60,52 @@ pipeline {
                 }
             }
         }
+
  
-        stage('Deploy staging') {
+        stage('Deploy') {
             agent {
                 docker {
                     image 'php:8.1-cli'
                     reuseNode true
                 }
-            }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
-            }
-
+            }    
             steps {
                 sh '''
-                    netlify deploy --dir=build --php > deploy-output.php
-                    CI_ENVIRONMENT_URL=$(node-jq -r '.deploy_url' deploy-output.php)
-                '''
-            }
-
-            post {
-                always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
-        }
-
-        stage('Deploy prod') {
-            agent {
-                docker {
-                    image 'php:8.1-cli'
-                    reuseNode true
-                }
-            }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'https://chipper-marigold-9d956f.netlify.app'
-            }
-
-            steps {
-                sh '''
+                    install netlify-cli 
+                    netlify --version
+                    echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
                     netlify status
                     netlify deploy --dir=build --prod
                 '''
             }
-
-            post {
-                always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
         }
+
+        // stage('Deploy prod') {
+        //     agent {
+        //         docker {
+        //             image 'php:8.1-cli'
+        //             reuseNode true
+        //         }
+        //     }
+
+        //     environment {
+        //         CI_ENVIRONMENT_URL = 'https://chipper-marigold-9d956f.netlify.app'
+        //     }
+
+        //     steps {
+        //         sh '''
+        //             netlify --version
+        //             echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
+        //             netlify status
+        //             netlify deploy --dir=build --prod
+        //         '''
+        //     }
+
+        //     post {
+        //         always {
+        //             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.php', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
+        //         }
+        //     }
+        // }
     }
 }
