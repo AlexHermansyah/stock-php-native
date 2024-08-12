@@ -12,12 +12,13 @@ pipeline {
         stage('Build') {
             agent {
                 docker {
-                    image 'stockbarang:latest'
+                    image 'php:latest'
                     reuseNode true
                 }
             }
             steps {
                 sh '''
+                    # Periksa apakah file build/index.html ada
                     ls -la
                 '''
             }
@@ -49,14 +50,16 @@ pipeline {
                 stage('Unit tests') {
                     agent {
                         docker {
-                            image 'stockbarang:latest'
+                            image 'php:latest'
                             reuseNode true
                         }
                     }
 
                     steps {
                         sh '''
-                            #test -f build/index.html
+                            # Tes unit di sini, sesuaikan dengan kebutuhan Anda
+                            # Contoh tes
+                            # test -f build/index.html
                         '''
                     }
                     post {
@@ -89,11 +92,11 @@ pipeline {
                 }
             }
         }
- 
+
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:latest'
                     reuseNode true
                 }
             }
@@ -124,7 +127,7 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    image 'php:latest'
                     reuseNode true
                 }
             }
