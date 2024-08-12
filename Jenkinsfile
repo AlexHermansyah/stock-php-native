@@ -69,7 +69,7 @@ pipeline {
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'stockbarang:latest'
+                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                             reuseNode true
                         }
                     }
@@ -93,7 +93,7 @@ pipeline {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'stockbarang:latest'
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
             }
@@ -104,13 +104,13 @@ pipeline {
 
             steps {
                 sh '''
-                    workspaces/stock-php-native/netlify --version
+                    npm install netlify-cli node-jq
+                    node_modules/.bin/netlify --version
                     echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    workspaces/stock-php-native/netlify status
-                    workspaces/stock-php-native/netlify deploy --dir=build 
-                    CI_ENVIRONMENT_URL=$(workspaces/stock-php-native/node-jq -r '.deploy_url' deploy-output.json)
-                    npx playwright test --reporter=html
-
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
+                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json)
+                    npx playwright test  --reporter=html
                 '''
             }
 
@@ -124,7 +124,7 @@ pipeline {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'stockbarang:latest'
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
                     reuseNode true
                 }
             }
@@ -135,12 +135,12 @@ pipeline {
 
             steps {
                 sh '''
-                    workspaces/stock-php-native node --version
-                    workspaces/stock-php-native install netlify-cli
-                    workspaces/stock-php-native/netlify --version
+                    node --version
+                    npm install netlify-cli
+                    node_modules/.bin/netlify --version
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    workspaces/stock-php-native/netlify status
-                    workspaces/stock-php-native/netlify deploy --dir=build --prod
+                    node_modules/.bin/netlify status
+                    node_modules/.bin/netlify deploy --dir=build --prod
                     npx playwright test --reporter=html
                 '''
             }
