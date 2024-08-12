@@ -51,7 +51,7 @@ stage('AWS') {
         AWS_S3_BUCKET = 'learn-jenkins-202408112001'
     }
     steps {
-        withCredentials([usernamePassword(credentialsId: 'my-aws-php', passwordVariable: 'AWS_SECRET_ACCESS_KEY_PHP', usernameVariable: 'AWS_ACCESS_KEY_ID_PHP')]) {
+        withCredentials([usernamePassword(credentialsId: 'my-aws-php', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
             sh '''
                 ls -la build
                 aws s3 sync build s3://$AWS_S3_BUCKET
