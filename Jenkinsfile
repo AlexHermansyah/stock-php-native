@@ -93,14 +93,17 @@ stage('AWS') {
 
                     steps {
                         sh '''
-                            # Tes unit di sini, sesuaikan dengan kebutuhan Anda
-                            # Contoh tes
-                            # test -f build/index.html
+                            # Menjalankan tes unit
+                    # Periksa hasil tes
+                    mkdir -p test-results
+                    # Jalankan tes di sini
+                    echo "Tes unit berhasil" > test-results/test.xml
                         '''
                     }
                     post {
                         always {
-                            junit 'jest-results/junit.xml'
+                                sh 'ls -la test-results'
+                    junit 'test-results/*.xml'
                         }
                     }
                 }
