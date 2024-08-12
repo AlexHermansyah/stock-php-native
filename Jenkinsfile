@@ -72,7 +72,6 @@ pipeline {
             steps {
                 sh '''
                     echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    netlify deploy --dir=build --prod
                 '''
             }
         }
