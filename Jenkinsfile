@@ -108,7 +108,7 @@ stage('AWS') {
                 stage('E2E') {
                     agent {
                         docker {
-                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            image 'php:8.0-cli'
                             reuseNode true
                         }
                     }
