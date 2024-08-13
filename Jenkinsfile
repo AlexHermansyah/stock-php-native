@@ -93,8 +93,6 @@ stage('AWS') {
 
                     steps {
                         sh '''
-                            # Tes unit di sini, sesuaikan dengan kebutuhan Anda
-                            # Contoh tes
                             # test -f build/index.html
                         '''
                     }
