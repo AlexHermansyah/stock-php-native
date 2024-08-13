@@ -115,7 +115,7 @@ stage('AWS') {
 
                     steps {
                         sh '''
-                            workspaces/stock-php-native -s build &
+                            workspace/App-php-native -s build &
                             sleep 10
                         '''
                     }
