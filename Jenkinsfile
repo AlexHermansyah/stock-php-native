@@ -132,7 +132,7 @@ stage('AWS') {
         stage('Deploy staging') {
             agent {
                 docker {
-                    image 'php:latest'
+                    image 'php:8.0-cli'
                     reuseNode true
                 }
             }
@@ -163,7 +163,7 @@ stage('AWS') {
         stage('Deploy prod') {
             agent {
                 docker {
-                    image 'php:latest'
+                    image 'php:8.0-cli'
                     reuseNode true
                 }
             }
