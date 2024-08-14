@@ -2,191 +2,88 @@ pipeline {
     agent any
 
     environment {
-        NETLIFY_SITE_ID = '4cc8e3f6-6dc6-4eb8-b483-e6d1252210a0'
-        NETLIFY_AUTH_TOKEN = credentials('netlify-token-php')
-        REACT_APP_VERSION = "1.0.$BUILD_ID"
+        IMAGE_NAME = 'alexhermansyah/stockbarang:latest'
+        CONTAINER_NAME = 'stockbarang_container'
+        DB_CONTAINER_NAME = 'dbstockbarang'
+        DB_VOLUME_NAME = 'dbstockbarang_volume'
+        DB_NETWORK_NAME = 'stockbarang_network'
+        PHPMYADMIN_CONTAINER_NAME = 'phpmyadmin_stockbarang'
+        DOCKER_USERNAME = credentials('usernamedocker')
+        DOCKER_PASSWORD = credentials('passworddocker')
+        EC2_HOST = '52.54.155.185'
+        DBPASSWORD = credentials('dbpassword')
+        SSH_KEY_ID = 'remote-ec2-ssh'
+    }
+
+    options {
+        timeout(time: 20, unit: 'MINUTES')
     }
 
     stages {
-stage('Build') {
-    agent {
-        docker {
-            image 'php:latest'
-            reuseNode true
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
         }
-    }
-    steps {
-        sh '''
-            # Contoh build
-            mkdir -p build
-            # Tambahkan perintah build yang sesuai
-            echo "File index.html" > build/index.html
-        '''
-    }
-}
 
-        // stage('Build') {
-        //     agent {
-        //         docker {
-        //             image 'php:latest'
-        //             reuseNode true
-        //         }
-        //     }
-        //     steps {
-        //         sh '''
-        //             # Periksa apakah file build/index.html ada
-        //             ls -la
-        //         '''
-        //     }
-        // }
-stage('AWS') {
-    agent {
-        docker {
-            image 'amazon/aws-cli'
-            reuseNode true
-            args "--entrypoint=''"
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t ${IMAGE_NAME} .
+                    '''
+                }
+            }
         }
-    }
-    environment {
-        AWS_S3_BUCKET = 'php-bucket-202408112001'
-    }
-    steps {
-        withCredentials([usernamePassword(credentialsId: 'my-aws-php', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-            sh '''
-                ls -la build
-                aws s3 sync build s3://$AWS_S3_BUCKET
-            '''
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh '''
+                    echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
+                    docker push ${IMAGE_NAME}
+                    '''
+                }
+            }
         }
-    }
-}
 
-        // stage('AWS') {
-        //     agent {
-        //         docker {
-        //             image 'amazon/aws-cli'
-        //             reuseNode true
-        //             args "--entrypoint=''"
-        //         }
-        //     }
-        //     environment {
-        //         AWS_S3_BUCKET = 'learn-jenkins-202408112001'
-        //     }
-        //     steps {
-        //         withCredentials([usernamePassword(credentialsId: 'my-aws-php', passwordVariable: 'AWS_SECRET_ACCESS_KEY_PHP', usernameVariable: 'AWS_ACCESS_KEY_ID_PHP')]) {
-        //             sh '''
-        //                 aws --version
-        //                 aws s3 sync build s3://$AWS_S3_BUCKET
-        //             '''
-        //         }
-        //     }
-        // }
-
-        stage('Tests') {
-            parallel {
-                stage('Unit tests') {
-                    agent {
-                        docker {
-                            image 'php:latest'
-                            reuseNode true
-                        }
-                    }
-
-                    steps {
+        stage('Deploy Docker Container on EC2') {
+            steps {
+                script {
+                    echo "Deploying Docker Container on EC2"
+                    echo "EC2 Host: ${EC2_HOST}"
+                    withCredentials([file(credentialsId: "${SSH_KEY_ID}", variable: 'SSH_KEY')]) {
                         sh '''
-                            # test -f build/index.html
+                        ssh -i ${SSH_KEY} -o StrictHostKeyChecking=no ubuntu@${EC2_HOST} <<EOF
+sudo docker stop ${CONTAINER_NAME} || true
+sudo docker rm ${CONTAINER_NAME} || true
+sudo docker stop ${PHPMYADMIN_CONTAINER_NAME} || true
+sudo docker rm ${PHPMYADMIN_CONTAINER_NAME} || true
+sudo docker stop ${DB_CONTAINER_NAME} || true
+sudo docker rm ${DB_CONTAINER_NAME} || true
+sudo docker volume create ${DB_VOLUME_NAME} || true
+sudo docker network create ${DB_NETWORK_NAME} || true
+sudo docker pull ${IMAGE_NAME}
+sudo docker run -d -p 3306:3306 --name ${DB_CONTAINER_NAME} --restart unless-stopped -e MARIADB_ROOT_PASSWORD=${DBPASSWORD} -e MARIADB_DATABASE=stockbarang --network ${DB_NETWORK_NAME} -v ${DB_VOLUME_NAME}:/var/lib/mysql docker.io/mariadb
+sudo docker run -d -p 8080:80 -e PMA_HOST=${DB_CONTAINER_NAME} --name ${PHPMYADMIN_CONTAINER_NAME} --restart unless-stopped --network ${DB_NETWORK_NAME} docker.io/phpmyadmin
+sudo docker run -d --name ${CONTAINER_NAME} --network ${DB_NETWORK_NAME} -p 80:80 --restart unless-stopped ${IMAGE_NAME}
+EOF
                         '''
                     }
-                    post {
-                        always {
-                            junit 'jest-results/junit.xml'
-                        }
-                    }
-                }
-
-                stage('E2E') {
-                    agent {
-                        docker {
-                            image 'php:8.0-cli'
-                            reuseNode true
-                        }
-                    }
-
-                    steps {
-                        sh '''
-                            workspace/App-php-native -s build &
-                            sleep 10
-                        '''
-                    }
-
-                    post {
-                        always {
-                            publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Local E2E', reportTitles: '', useWrapperFileDirectly: true])
-                        }
-                    }
                 }
             }
         }
+    }
 
-        stage('Deploy staging') {
-            agent {
-                docker {
-                    image 'php:8.0-cli'
-                    reuseNode true
-                }
-            }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'STAGING_URL_TO_BE_SET'
-            }
-
-            steps {
-                sh '''
-                    npm install netlify-cli node-jq
-                    node_modules/.bin/netlify --version
-                    echo "Deploying to staging. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --json > deploy-output.json
-                    CI_ENVIRONMENT_URL=$(node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json)
-                    npx playwright test  --reporter=html
-                '''
-            }
-
-            post {
-                always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Staging E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
+    post {
+        always {
+            cleanWs()
         }
-
-        stage('Deploy prod') {
-            agent {
-                docker {
-                    image 'php:8.0-cli'
-                    reuseNode true
-                }
-            }
-
-            environment {
-                CI_ENVIRONMENT_URL = 'chipper-marigold-9d956f.netlify.app'
-            }
-
-            steps {
-                sh '''
-                    node --version
-                    npm install netlify-cli
-                    node_modules/.bin/netlify --version
-                    echo "Deploying to production. Site ID: $NETLIFY_SITE_ID"
-                    node_modules/.bin/netlify status
-                    node_modules/.bin/netlify deploy --dir=build --prod
-                    npx playwright test --reporter=html
-                '''
-            }
-
-            post {
-                always {
-                    publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Prod E2E', reportTitles: '', useWrapperFileDirectly: true])
-                }
-            }
+        success {
+            echo 'Deployment succeeded!'
+        }
+        failure {
+            echo 'Deployment failed!'
         }
     }
 }
