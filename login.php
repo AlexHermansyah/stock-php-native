@@ -62,7 +62,10 @@ if(!isset($_SESSION['log'])){
                                                 <label for="inputPassword">Password</label>
                                             </div>
                                             <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
-                                                <button class="btn btn-primary" name = "login">Login ADMIN</button>
+                                                <button class="btn btn-primary" name = "login">Login</button>
+                                            </div>
+                                            <div class="d-flex align-items-right justify-content-between mt-4 mb-0">
+                                                <button class="btn btn-primary" name = "login">keluar</button>
                                             </div>
                                         </form>
                                     </div>
