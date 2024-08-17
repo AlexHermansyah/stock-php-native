@@ -13,6 +13,14 @@ pipeline {
         EC2_HOST = '52.54.155.185'
         DBPASSWORD = credentials('dbpassword')
         SSH_KEY_ID = 'remote-ec2-ssh'
+
+        // Port configuration
+        DB_PORT_HOST = '3306'
+        DB_PORT_CONTAINER = '3306'
+        PHPMYADMIN_PORT_HOST = '8080'
+        PHPMYADMIN_PORT_CONTAINER = '80'
+        APP_PORT_HOST = '80'
+        APP_PORT_CONTAINER = '80'
     }
 
     options {
@@ -65,9 +73,9 @@ sudo docker rm ${DB_CONTAINER_NAME} || true
 sudo docker volume create ${DB_VOLUME_NAME} || true
 sudo docker network create ${DB_NETWORK_NAME} || true
 sudo docker pull ${IMAGE_NAME}
-sudo docker run -d -p 3306:3306 --name ${DB_CONTAINER_NAME} --restart unless-stopped -e MARIADB_ROOT_PASSWORD=${DBPASSWORD} -e MARIADB_DATABASE=stockbarang --network ${DB_NETWORK_NAME} -v ${DB_VOLUME_NAME}:/var/lib/mysql docker.io/mariadb
-sudo docker run -d -p 8080:80 -e PMA_HOST=${DB_CONTAINER_NAME} --name ${PHPMYADMIN_CONTAINER_NAME} --restart unless-stopped --network ${DB_NETWORK_NAME} docker.io/phpmyadmin
-sudo docker run -d --name ${CONTAINER_NAME} --network ${DB_NETWORK_NAME} -p 80:80 --restart unless-stopped ${IMAGE_NAME}
+sudo docker run -d -p ${DB_PORT_HOST}:${DB_PORT_CONTAINER} --name ${DB_CONTAINER_NAME} --restart unless-stopped -e MARIADB_ROOT_PASSWORD=${DBPASSWORD} -e MARIADB_DATABASE=stockbarang --network ${DB_NETWORK_NAME} -v ${DB_VOLUME_NAME}:/var/lib/mysql docker.io/mariadb
+sudo docker run -d -p ${PHPMYADMIN_PORT_HOST}:${PHPMYADMIN_PORT_CONTAINER} -e PMA_HOST=${DB_CONTAINER_NAME} --name ${PHPMYADMIN_CONTAINER_NAME} --restart unless-stopped --network ${DB_NETWORK_NAME} docker.io/phpmyadmin
+sudo docker run -d --name ${CONTAINER_NAME} --network ${DB_NETWORK_NAME} -p ${APP_PORT_HOST}:${APP_PORT_CONTAINER} --restart unless-stopped ${IMAGE_NAME}
 EOF
                         '''
                     }
