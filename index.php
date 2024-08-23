@@ -63,7 +63,7 @@ require 'cek.php'
                         <div class="card mb-4">
                             <div class="card-header">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
-                                Tambah Barang
+                                UPDATE
                              </button>
                              <a href = "export.php" class= "btn btn_info">Export Data</a>
                             </div>
