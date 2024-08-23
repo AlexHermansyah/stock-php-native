@@ -2,7 +2,16 @@
 session_start();
 
 //membuat koneksi ke database
-$conn = mysqli_connect("localhost","root","","stockbarang");
+$db_host = getenv('DB_HOST');
+$db_user = getenv('DB_USER');
+$db_password = getenv('DB_PASSWORD');
+$db_name = getenv('DB_NAME');
+
+$conn = mysqli_connect($db_host, $db_user, $db_password, $db_name);
+
+if (!$conn) {
+  die("Koneksi gagal: " . mysqli_connect_error());
+}
 
 //menambah barang baru
 if(isset($_POST['addnewbarang'])){
