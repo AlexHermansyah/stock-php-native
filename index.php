@@ -18,7 +18,7 @@ require 'cek.php'
     <body class="sb-nav-fixed">
         <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
             <!-- Navbar Brand-->
-            <a class="navbar-brand ps-3" href="index.php">Smart Shoes PT YASIGA</a>
+            <a class="navbar-brand ps-3" href="index.php">SmartShoes PT YASIGA</a>
             <!-- Sidebar Toggle-->
             <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i class="fas fa-bars"></i></button>
            
@@ -63,7 +63,7 @@ require 'cek.php'
                         <div class="card mb-4">
                             <div class="card-header">
                             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#myModal">
-                                Tambah Barang
+                                UPDATE
                              </button>
                              <a href = "export.php" class= "btn btn_info">Export Data</a>
                             </div>
